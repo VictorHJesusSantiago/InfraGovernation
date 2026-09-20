@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  test-lint-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r 05_politica_senha/requirements.txt -r 10_backup_integridade/requirements.txt
+          python -m pip install ruff pip-audit
+
+      - name: Lint
+        run: ruff check 01_inventario_ativos 02_auditor_rede 03_gerenciador_licencas 04_dashboard_capacidade 05_politica_senha 06_simulador_topologia 07_change_management 08_analisador_logs 09_hardening_checklist 10_backup_integridade tests
+
+      - name: Tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Dependency scan
+        run: |
+          for requirements in 01_inventario_ativos 02_auditor_rede 03_gerenciador_licencas 04_dashboard_capacidade 05_politica_senha 06_simulador_topologia 07_change_management 08_analisador_logs 09_hardening_checklist 10_backup_integridade; do
+            pip-audit -r "$requirements/requirements.txt"
+          done
